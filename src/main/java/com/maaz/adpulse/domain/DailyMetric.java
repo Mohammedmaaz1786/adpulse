@@ -2,19 +2,19 @@ package com.maaz.adpulse.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "daily_metrics",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"day", "campaign_id", "ad_id"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"metric_date", "campaign_id", "ad_id"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class DailyMetric {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate day;
+    @Column(name = "metric_date", nullable = false)
+    private LocalDate date;
 
     @ManyToOne(optional = false)
     private Campaign campaign;

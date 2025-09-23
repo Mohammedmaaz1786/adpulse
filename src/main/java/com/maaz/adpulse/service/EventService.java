@@ -7,6 +7,7 @@ import com.maaz.adpulse.repo.EventRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 public class EventService {
@@ -29,7 +30,7 @@ public class EventService {
         }
 
         Ad ad = adRepo.findById(adId)
-                .orElseThrow(() -> new RuntimeException("Ad not found"));
+                .orElseThrow(() -> new RuntimeException("Ad not found with ID: " + adId + ". Please ensure the Ad exists before recording events."));
 
         Event event = Event.builder()
                 .externalEventId(externalEventId)
@@ -44,5 +45,20 @@ public class EventService {
                 .build();
 
         return eventRepo.save(event);
+    }
+
+    public List<Event> getAllEvents() {
+        return eventRepo.findAll();
+    }
+
+    public Event getEventById(Long id) {
+        return eventRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Event not found with ID: " + id));
+    }
+
+    public List<Event> getEventsByAdId(Long adId) {
+        Ad ad = adRepo.findById(adId)
+                .orElseThrow(() -> new RuntimeException("Ad not found with ID: " + adId));
+        return eventRepo.findByAd(ad);
     }
 }

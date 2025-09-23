@@ -1,35 +1,36 @@
 package com.maaz.adpulse.web;
 
 import com.maaz.adpulse.domain.User;
-import com.maaz.adpulse.service.UserService;
+import com.maaz.adpulse.repo.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
-    public UserController(UserService userService) { this.userService = userService; }
+    private final UserRepository userRepository;
 
     @PostMapping
     public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+        return userRepository.save(user);
     }
 
     @GetMapping
     public List<User> getAllUsers() {
-        return userService.getAllUsers();
+        return userRepository.findAll();
     }
 
     @GetMapping("/{id}")
     public User getUserById(@PathVariable Long id) {
-        return userService.getUserById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+        userRepository.deleteById(id);
     }
 }

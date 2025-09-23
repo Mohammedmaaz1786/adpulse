@@ -9,6 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DailyMetricRepository extends JpaRepository<DailyMetric, Long> {
-    Optional<DailyMetric> findByDayAndCampaignAndAd(LocalDate day, Campaign campaign, Ad ad);
+    Optional<DailyMetric> findByDateAndCampaignAndAd(LocalDate date, Campaign campaign, Ad ad);
     List<DailyMetric> findByCampaign(Campaign campaign);
 }
