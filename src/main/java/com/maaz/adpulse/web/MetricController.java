@@ -1,6 +1,7 @@
 package com.maaz.adpulse.web;
 
 import com.maaz.adpulse.dto.CampaignMetricsDTO;
+import com.maaz.adpulse.dto.AdvertiserMetricsDTO;
 import com.maaz.adpulse.dto.AdLeaderboardDTO;
 import com.maaz.adpulse.repo.DailyMetricRepository;
 import com.maaz.adpulse.service.MetricService;
@@ -65,5 +66,13 @@ public class MetricController {
             @RequestParam String metric,
             @RequestParam(defaultValue = "5") int limit) {
         return metricService.getTopAds(metric, limit);
+    }
+
+    @GetMapping("/advertiser/{advertiserId}")
+    public AdvertiserMetricsDTO getAdvertiserMetrics(
+            @PathVariable Long advertiserId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return metricService.getMetricsByAdvertiser(advertiserId, startDate, endDate);
     }
 }

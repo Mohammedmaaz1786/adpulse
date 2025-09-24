@@ -1,11 +1,14 @@
 package com.maaz.adpulse.service;
 
 import com.maaz.adpulse.domain.Ad;
+import com.maaz.adpulse.domain.Campaign;
 import com.maaz.adpulse.domain.DailyMetric;
+import com.maaz.adpulse.dto.AdvertiserMetricsDTO;
 import com.maaz.adpulse.domain.Event;
 import com.maaz.adpulse.dto.AdLeaderboardDTO;
 import com.maaz.adpulse.dto.CampaignMetricsDTO;
 import com.maaz.adpulse.repo.AdRepository;
+import com.maaz.adpulse.repo.CampaignRepository;
 import com.maaz.adpulse.repo.DailyMetricRepository;
 import com.maaz.adpulse.repo.EventRepository;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,11 +27,13 @@ public class MetricService {
     private final EventRepository eventRepo;
     private final DailyMetricRepository metricRepo;
     private final AdRepository adRepo;
+    private final CampaignRepository campaignRepository;
 
-    public MetricService(EventRepository eventRepo, DailyMetricRepository metricRepo, AdRepository adRepo) {
+    public MetricService(EventRepository eventRepo, DailyMetricRepository metricRepo, AdRepository adRepo, CampaignRepository campaignRepository) {
         this.eventRepo = eventRepo;
         this.metricRepo = metricRepo;
         this.adRepo = adRepo;
+        this.campaignRepository = campaignRepository;
     }
 
     @Scheduled(cron = "0 * * * * *")
@@ -131,28 +136,61 @@ public class MetricService {
         return ads.stream()
                 .map(ad -> {
                     List<DailyMetric> metrics = metricRepo.findByAdId(ad.getId());
-                    double value = 0.0;
-                    switch (metric.toLowerCase()) {
-                        case "ctr":
-                            value = metrics.stream().mapToDouble(
-                                    m -> m.getImpressions() != 0 ? (m.getClicks() * 100.0 / m.getImpressions()) : 0.0
-                            ).average().orElse(0.0);
-                            break;
-                        case "roi":
-                            value = metrics.stream().mapToDouble(
-                                    m -> m.getSpend() != 0 ? m.getRevenue() / m.getSpend() : 0.0
-                            ).average().orElse(0.0);
-                            break;
-                        case "conversions":
-                            value = metrics.stream().mapToDouble(DailyMetric::getConversions).sum();
-                            break;
-                        default:
-                            value = 0.0;
-                    }
+                    double value = switch (metric.toLowerCase()) {
+                        case "ctr" -> metrics.stream().mapToDouble(
+                                m -> m.getImpressions() != 0 ? (m.getClicks() * 100.0 / m.getImpressions()) : 0.0
+                        ).average().orElse(0.0);
+                        case "roi" -> metrics.stream().mapToDouble(
+                                m -> m.getSpend() != 0 ? m.getRevenue() / m.getSpend() : 0.0
+                        ).average().orElse(0.0);
+                        case "conversions" -> metrics.stream().mapToDouble(DailyMetric::getConversions).sum();
+                        default -> 0.0;
+                    };
                     return new AdLeaderboardDTO(ad.getId(), ad.getName(), ad.getCampaign().getName(), value);
                 })
                 .sorted(Comparator.comparingDouble(AdLeaderboardDTO::getMetricValue).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    public AdvertiserMetricsDTO getMetricsByAdvertiser(Long advertiserId, LocalDate startDate, LocalDate endDate) {
+        List<Campaign> campaigns = campaignRepository.findByAdvertiserId(advertiserId);
+
+        List<CampaignMetricsDTO> campaignMetrics = campaigns.stream()
+                .map(campaign -> {
+                    List<DailyMetric> metrics = metricRepo
+                            .findByCampaignIdAndDateBetween(campaign.getId(), startDate, endDate);
+
+                    CampaignMetricsDTO dto = new CampaignMetricsDTO();
+                    dto.setCampaignId(campaign.getId());
+                    dto.setCampaignName(campaign.getName());
+
+                    long impressions = metrics.stream().mapToLong(DailyMetric::getImpressions).sum();
+                    long clicks = metrics.stream().mapToLong(DailyMetric::getClicks).sum();
+                    long conversions = metrics.stream().mapToLong(DailyMetric::getConversions).sum();
+                    double spend = metrics.stream().mapToDouble(DailyMetric::getSpend).sum();
+                    double revenue = metrics.stream().mapToDouble(DailyMetric::getRevenue).sum();
+
+                    dto.setImpressions(impressions);
+                    dto.setClicks(clicks);
+                    dto.setConversions(conversions);
+                    dto.setSpend(spend);
+                    dto.setRevenue(revenue);
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        AdvertiserMetricsDTO advertiserMetrics = new AdvertiserMetricsDTO();
+        advertiserMetrics.setAdvertiserId(advertiserId);
+        advertiserMetrics.setCampaignMetrics(campaignMetrics);
+
+        advertiserMetrics.setTotalImpressions(campaignMetrics.stream().mapToLong(CampaignMetricsDTO::getImpressions).sum());
+        advertiserMetrics.setTotalClicks(campaignMetrics.stream().mapToLong(CampaignMetricsDTO::getClicks).sum());
+        advertiserMetrics.setTotalConversions(campaignMetrics.stream().mapToLong(CampaignMetricsDTO::getConversions).sum());
+        advertiserMetrics.setTotalSpend(campaignMetrics.stream().mapToDouble(CampaignMetricsDTO::getSpend).sum());
+        advertiserMetrics.setTotalRevenue(campaignMetrics.stream().mapToDouble(CampaignMetricsDTO::getRevenue).sum());
+
+        return advertiserMetrics;
     }
 }

@@ -7,6 +7,8 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class CampaignMetricsDTO {
+    private Long campaignId;
+    private String campaignName;
     private LocalDate date;
     private Long impressions;
     private Long clicks;
@@ -16,6 +18,9 @@ public class CampaignMetricsDTO {
     private Double ctr;  // Click Through Rate
     private Double cpc;  // Cost Per Click
     private Double roi;  // Return on Investment
+
+    // No-args constructor
+    public CampaignMetricsDTO() {}
 
     public CampaignMetricsDTO(LocalDate date, Long impressions, Long clicks, Long conversions,
                               Double spend, Double revenue) {
