@@ -6,6 +6,8 @@ import com.maaz.adpulse.web.dto.EventRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @RestController
@@ -20,11 +22,15 @@ public class EventController {
 
     @PostMapping
     public Event recordEvent(@RequestBody EventRequest req) {
+        // Parse LocalDateTime and convert to Instant
+        LocalDateTime localDateTime = LocalDateTime.parse(req.getOccurredAt());
+        Instant instant = localDateTime.atZone(ZoneOffset.UTC).toInstant();
+
         return eventService.recordEvent(
                 req.getExternalEventId(),
                 req.getAdId(),
                 req.getType(),
-                Instant.parse(req.getOccurredAt()),
+                instant,
                 req.getCost(),
                 req.getRevenue(),
                 req.getUserAgent(),

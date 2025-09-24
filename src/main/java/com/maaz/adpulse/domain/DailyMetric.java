@@ -5,27 +5,51 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "daily_metrics",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"metric_date", "campaign_id", "ad_id"}))
+@Table(name = "daily_metrics")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class DailyMetric {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "metric_date", nullable = false)
-    private LocalDate date;
+    @Column(name = "ad_id", insertable = false, updatable = false)
+    private Long adId;
 
-    @ManyToOne(optional = false)
-    private Campaign campaign;
+    @Column(name = "campaign_id", insertable = false, updatable = false)
+    private Long campaignId;
 
-    @ManyToOne(optional = false)
+    @Column(name = "clicks")
+    private Long clicks;
+
+    @Column(name = "conversions")
+    private Long conversions;
+
+    @Column(name = "impressions")
+    private Long impressions;
+
+    @Column(name = "metric_date")
+    private LocalDate metricDate;
+
+    @Column(name = "revenue")
+    private Double revenue;
+
+    @Column(name = "spend")
+    private Double spend;
+
+    @ManyToOne
+    @JoinColumn(name = "ad_id")
     private Ad ad;
 
-    private Long impressions = 0L;
-    private Long clicks = 0L;
-    private Long conversions = 0L;
+    @ManyToOne
+    @JoinColumn(name = "campaign_id")
+    private Campaign campaign;
 
-    private Double spend = 0.0;
-    private Double revenue = 0.0;
+    // Backward compatibility getter for date field
+    public LocalDate getDate() {
+        return metricDate;
+    }
+
+    public void setDate(LocalDate date) {
+        this.metricDate = date;
+    }
 }

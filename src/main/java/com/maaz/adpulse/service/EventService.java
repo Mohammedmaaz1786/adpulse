@@ -7,6 +7,8 @@ import com.maaz.adpulse.repo.EventRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -36,7 +38,7 @@ public class EventService {
                 .externalEventId(externalEventId)
                 .ad(ad)
                 .type(Event.EventType.valueOf(type.toUpperCase()))
-                .occurredAt(occurredAt)
+                .occurredAt(LocalDateTime.ofInstant(occurredAt, ZoneOffset.UTC))
                 .cost(cost)
                 .revenue(revenue)
                 .userAgent(userAgent)

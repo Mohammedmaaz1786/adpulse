@@ -53,7 +53,7 @@ public class MetricService {
 
         for (Ad ad : ads) {
             // Check if metrics already exist for this date/ad to prevent duplicates
-            if (metricRepo.findByDateAndCampaignAndAd(targetDate, ad.getCampaign(), ad).isPresent()) {
+            if (metricRepo.findByMetricDateAndCampaignAndAd(targetDate, ad.getCampaign(), ad).isPresent()) {
                 log.info("Metrics already exist for ad {} on date {}, skipping", ad.getId(), targetDate);
                 continue;
             }
@@ -80,7 +80,7 @@ public class MetricService {
             DailyMetric metric = DailyMetric.builder()
                     .ad(ad)
                     .campaign(ad.getCampaign()) // Make sure campaign is set
-                    .date(targetDate)
+                    .metricDate(targetDate)
                     .impressions(impressions)
                     .clicks(clicks)
                     .conversions(conversions)
@@ -101,7 +101,7 @@ public class MetricService {
 
     // New methods for campaign metrics and leaderboard
     public List<CampaignMetricsDTO> getMetricsByCampaign(Long campaignId, LocalDate startDate, LocalDate endDate) {
-        List<DailyMetric> metrics = metricRepo.findByCampaignIdAndDateBetween(campaignId, startDate, endDate);
+        List<DailyMetric> metrics = metricRepo.findByCampaignIdAndMetricDateBetween(campaignId, startDate, endDate);
 
         return metrics.stream()
                 .map(dm -> new CampaignMetricsDTO(
@@ -116,7 +116,7 @@ public class MetricService {
     }
 
     public List<CampaignMetricsDTO> getMetricsByAd(Long adId, LocalDate startDate, LocalDate endDate) {
-        List<DailyMetric> metrics = metricRepo.findByAdIdAndDateBetween(adId, startDate, endDate);
+        List<DailyMetric> metrics = metricRepo.findByAdIdAndMetricDateBetween(adId, startDate, endDate);
 
         return metrics.stream()
                 .map(dm -> new CampaignMetricsDTO(
@@ -159,7 +159,7 @@ public class MetricService {
         List<CampaignMetricsDTO> campaignMetrics = campaigns.stream()
                 .map(campaign -> {
                     List<DailyMetric> metrics = metricRepo
-                            .findByCampaignIdAndDateBetween(campaign.getId(), startDate, endDate);
+                            .findByCampaignIdAndMetricDateBetween(campaign.getId(), startDate, endDate);
 
                     CampaignMetricsDTO dto = new CampaignMetricsDTO();
                     dto.setCampaignId(campaign.getId());

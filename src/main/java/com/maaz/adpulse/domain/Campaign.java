@@ -1,9 +1,11 @@
 package com.maaz.adpulse.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "campaigns")
@@ -13,14 +15,25 @@ public class Campaign {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @Column(name = "advertiser_id")
+    private Long advertiserId;
+
+    @Column(name = "budget")
     private Double budget;
 
-    private LocalDate startDate;
+    @Column(name = "end_date")
     private LocalDate endDate;
 
-    @ManyToOne(optional = false)
-    private User advertiser;
+    @Column(name = "name")
+    private String name;
 
-    private String status; // ACTIVE, PAUSED, ENDED
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "status")
+    private String status;
+
+    @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL)
+    @JsonIgnore // Prevent serialization of this field completely
+    private List<Ad> ads;
 }
