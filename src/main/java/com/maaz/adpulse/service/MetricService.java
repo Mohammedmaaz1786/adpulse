@@ -3,6 +3,8 @@ package com.maaz.adpulse.service;
 import com.maaz.adpulse.domain.Ad;
 import com.maaz.adpulse.domain.DailyMetric;
 import com.maaz.adpulse.domain.Event;
+import com.maaz.adpulse.dto.AdLeaderboardDTO;
+import com.maaz.adpulse.dto.CampaignMetricsDTO;
 import com.maaz.adpulse.repo.AdRepository;
 import com.maaz.adpulse.repo.DailyMetricRepository;
 import com.maaz.adpulse.repo.EventRepository;
@@ -11,8 +13,9 @@ import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -89,5 +92,67 @@ public class MetricService {
         }
 
         log.info("✅ Daily metrics aggregation completed for {}", targetDate);
+    }
+
+    // New methods for campaign metrics and leaderboard
+    public List<CampaignMetricsDTO> getMetricsByCampaign(Long campaignId, LocalDate startDate, LocalDate endDate) {
+        List<DailyMetric> metrics = metricRepo.findByCampaignIdAndDateBetween(campaignId, startDate, endDate);
+
+        return metrics.stream()
+                .map(dm -> new CampaignMetricsDTO(
+                        dm.getDate(),
+                        dm.getImpressions(),
+                        dm.getClicks(),
+                        dm.getConversions(),
+                        dm.getSpend(),
+                        dm.getRevenue()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public List<CampaignMetricsDTO> getMetricsByAd(Long adId, LocalDate startDate, LocalDate endDate) {
+        List<DailyMetric> metrics = metricRepo.findByAdIdAndDateBetween(adId, startDate, endDate);
+
+        return metrics.stream()
+                .map(dm -> new CampaignMetricsDTO(
+                        dm.getDate(),
+                        dm.getImpressions(),
+                        dm.getClicks(),
+                        dm.getConversions(),
+                        dm.getSpend(),
+                        dm.getRevenue()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public List<AdLeaderboardDTO> getTopAds(String metric, int limit) {
+        List<Ad> ads = adRepo.findAll();
+
+        return ads.stream()
+                .map(ad -> {
+                    List<DailyMetric> metrics = metricRepo.findByAdId(ad.getId());
+                    double value = 0.0;
+                    switch (metric.toLowerCase()) {
+                        case "ctr":
+                            value = metrics.stream().mapToDouble(
+                                    m -> m.getImpressions() != 0 ? (m.getClicks() * 100.0 / m.getImpressions()) : 0.0
+                            ).average().orElse(0.0);
+                            break;
+                        case "roi":
+                            value = metrics.stream().mapToDouble(
+                                    m -> m.getSpend() != 0 ? m.getRevenue() / m.getSpend() : 0.0
+                            ).average().orElse(0.0);
+                            break;
+                        case "conversions":
+                            value = metrics.stream().mapToDouble(DailyMetric::getConversions).sum();
+                            break;
+                        default:
+                            value = 0.0;
+                    }
+                    return new AdLeaderboardDTO(ad.getId(), ad.getName(), ad.getCampaign().getName(), value);
+                })
+                .sorted(Comparator.comparingDouble(AdLeaderboardDTO::getMetricValue).reversed())
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 }
